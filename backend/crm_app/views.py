@@ -1,19 +1,31 @@
 import datetime
+from django.conf import settings
 from django.utils import timezone
 from django.db.models import Sum, Q, F
 from django.http import HttpResponse
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 
 from .models import Admin, OTP, Customer, Payment, MessageLog
 from .serializers import AdminSerializer, CustomerSerializer, PaymentSerializer, MessageLogSerializer
-from .utils import generate_otp_code, send_whatsapp_stub, generate_pdf_receipt
+from .utils import generate_otp_code, send_whatsapp_stub, generate_pdf_receipt, send_otp_email
+from .authentication import JWTAuthentication, generate_token
+
+# ─── Health check ─────────────────────────────────────────────────────────────
+
+@api_view(['GET'])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def health(request):
+    return Response({'status': 'ok', 'timestamp': timezone.now().isoformat()})
+
 
 # ─── Auth Views ───────────────────────────────────────────────────────────────
 
 @api_view(['GET'])
+@authentication_classes([])
 @permission_classes([AllowAny])
 def admin_exists(request):
     exists = Admin.objects.count() > 0
@@ -21,6 +33,7 @@ def admin_exists(request):
 
 
 @api_view(['POST'])
+@authentication_classes([])
 @permission_classes([AllowAny])
 def signup(request):
     if Admin.objects.count() >= 1:
@@ -47,6 +60,7 @@ def signup(request):
 
 
 @api_view(['POST'])
+@authentication_classes([])
 @permission_classes([AllowAny])
 def login(request):
     email = request.data.get('email')
@@ -64,19 +78,33 @@ def login(request):
     OTP.objects.filter(admin=admin, consumed=False).update(consumed=True)
 
     code = generate_otp_code()
-    expires_at = timezone.now() + datetime.timedelta(minutes=10)
+    expires_minutes = settings.OTP_EXPIRES_MINUTES
+    expires_at = timezone.now() + datetime.timedelta(minutes=expires_minutes)
     OTP.objects.create(admin=admin, code=code, expires_at=expires_at)
 
+    email_sent = send_otp_email(admin, code, expires_minutes)
+
+    # Always echo the OTP to the server console too, as a dev-friendly fallback
+    # in case SMTP isn't configured yet (mirrors the previous Node behaviour).
     print(f"\n🔑  DEV OTP for {email}: {code}\n")
+
+    message = (
+        f'OTP sent to {email}. Valid for {expires_minutes} minutes.'
+        if email_sent else
+        f'Could not email the OTP (check EMAIL_* settings in .env). '
+        f'For now, find it printed in the Django server console. Valid for {expires_minutes} minutes.'
+    )
 
     return Response({
         'success': True,
-        'message': f'OTP sent to {email}. Valid for 10 minutes.',
+        'message': message,
+        'emailSent': email_sent,
         'adminId': str(admin.id)
     })
 
 
 @api_view(['POST'])
+@authentication_classes([])
 @permission_classes([AllowAny])
 def verify_otp(request):
     admin_id = request.data.get('adminId')
@@ -98,8 +126,8 @@ def verify_otp(request):
         admin.is_verified = True
         admin.save()
 
-    # Generate token
-    token = f"admin-token-{admin.id}"
+    # Generate a real signed JWT (replaces the previous jsonwebtoken-issued token)
+    token = generate_token(admin)
 
     return Response({
         'success': True,
@@ -110,13 +138,14 @@ def verify_otp(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
 def me(request):
     try:
-        admin = Admin.objects.first()
-        if not admin:
-            return Response({'success': False, 'message': 'Admin not found.'}, status=404)
+        admin = Admin.objects.get(pk=request.user.id)
         return Response({'success': True, 'admin': AdminSerializer(admin).data})
+    except Admin.DoesNotExist:
+        return Response({'success': False, 'message': 'Admin not found.'}, status=404)
     except Exception as e:
         return Response({'success': False, 'message': str(e)}, status=500)
 
@@ -124,7 +153,8 @@ def me(request):
 # ─── Dashboard Views ──────────────────────────────────────────────────────────
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
 def dashboard_summary(request):
     total_customers = Customer.objects.count()
     total_collection = Payment.objects.aggregate(total=Sum('amount'))['total'] or 0
@@ -148,7 +178,8 @@ def dashboard_summary(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
 def dashboard_monthly_collection(request):
     # Group payments by month for past 12 months
     today = datetime.date.today()
@@ -173,7 +204,8 @@ def dashboard_monthly_collection(request):
 # ─── Customer Views ───────────────────────────────────────────────────────────
 
 @api_view(['GET', 'POST'])
-@permission_classes([AllowAny])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
 def customer_list_create(request):
     if request.method == 'GET':
         category = request.query_params.get('category')
@@ -197,7 +229,8 @@ def customer_list_create(request):
 
 
 @api_view(['GET', 'PUT', 'DELETE'])
-@permission_classes([AllowAny])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
 def customer_detail(request, pk):
     try:
         customer = Customer.objects.get(pk=pk)
@@ -220,7 +253,8 @@ def customer_detail(request, pk):
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
 def send_reminder(request, pk):
     try:
         customer = Customer.objects.get(pk=pk)
@@ -236,7 +270,8 @@ def send_reminder(request, pk):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
 def expiring_soon(request):
     days = int(request.query_params.get('days', 30))
     category = request.query_params.get('category')
@@ -255,7 +290,8 @@ def expiring_soon(request):
 # ─── Payment & Receipt Views ──────────────────────────────────────────────────
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
 def record_payment(request):
     customer_id = request.data.get('customer_id')
     amount = request.data.get('amount')
@@ -290,7 +326,8 @@ def record_payment(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
 def overall_receipts(request):
     customers = Customer.objects.all()
     rows = []
@@ -332,7 +369,8 @@ def overall_receipts(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
 def get_receipt(request, customer_id):
     try:
         customer = Customer.objects.get(pk=customer_id)
@@ -355,7 +393,8 @@ def get_receipt(request, customer_id):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
 def get_receipt_pdf(request, customer_id):
     try:
         customer = Customer.objects.get(pk=customer_id)
@@ -366,7 +405,8 @@ def get_receipt_pdf(request, customer_id):
     paid = sum(float(p.amount) for p in payments)
     pending = float(customer.amount_total or 0) - paid
 
-    pdf_bytes = generate_pdf_receipt(customer, payments, paid, pending)
+    admin_name = getattr(request.user, 'name', None) or 'Bhavesh Solanki'
+    pdf_bytes = generate_pdf_receipt(customer, payments, paid, pending, admin_name=admin_name)
 
     filename = f"receipt_{customer.name.replace(' ', '_')}.pdf"
     response = HttpResponse(pdf_bytes, content_type='application/pdf')

@@ -1,13 +1,15 @@
 import os
 from pathlib import Path
+from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / '.env')
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-bhavesh-rto-crm-super-secret-key-2026')
 
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = [h.strip() for h in os.environ.get('ALLOWED_HOSTS', '*').split(',')]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -56,12 +58,12 @@ WSGI_APPLICATION = 'rto_crm.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'bhavesh_rto',
-        'USER': 'root',
-        'PASSWORD': 'Admin@123',
-        'HOST': 'localhost',
-        'PORT': '3306',
+        'ENGINE': os.environ.get('DB_ENGINE', 'django.db.backends.mysql'),
+        'NAME': os.environ.get('DB_NAME', 'bhavesh_rto'),
+        'USER': os.environ.get('DB_USER', 'root'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'Admin@123'),
+        'HOST': os.environ.get('DB_HOST', 'localhost'),
+        'PORT': os.environ.get('DB_PORT', '3306'),
         'OPTIONS': {
             'charset': 'utf8mb4',
         },
@@ -79,10 +81,44 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 APPEND_SLASH = False
-CORS_ALLOW_ALL_ORIGINS = True
+
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
+CORS_ALLOW_ALL_ORIGINS = DEBUG
+CORS_ALLOWED_ORIGINS = [] if DEBUG else [FRONTEND_URL]
 CORS_ALLOW_CREDENTIALS = True
 
+# ─── Auth / JWT settings (mirrors the previous Node/Express + jsonwebtoken setup) ──
+JWT_SECRET = os.environ.get('JWT_SECRET', 'bhavesh-rto-crm-jwt-secret-change-me-in-production')
+JWT_EXPIRES_IN = os.environ.get('JWT_EXPIRES_IN', '8h')
+JWT_ALGORITHM = 'HS256'
+OTP_EXPIRES_MINUTES = int(os.environ.get('OTP_EXPIRES_MINUTES', '10'))
+
+# ─── Email (OTP delivery) ──────────────────────────────────────────────────
+# Defaults to the console backend (prints the email to the terminal) so the
+# app works out of the box. Set EMAIL_HOST_USER / EMAIL_HOST_PASSWORD in .env
+# to actually deliver OTP emails via SMTP (e.g. Gmail with an App Password).
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+
+if os.environ.get('EMAIL_BACKEND'):
+    EMAIL_BACKEND = os.environ['EMAIL_BACKEND']
+elif EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER or 'no-reply@bhaveshrto.local')
+
 REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'crm_app.authentication.JWTAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny',
+    ],
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
         'rest_framework.renderers.BrowsableAPIRenderer',

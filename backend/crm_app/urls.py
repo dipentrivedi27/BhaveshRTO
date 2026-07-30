@@ -2,6 +2,9 @@ from django.urls import path, re_path
 from . import views
 
 urlpatterns = [
+    # Health
+    re_path(r'^health/?$', views.health, name='health'),
+
     # Auth
     re_path(r'^auth/admin-exists/?$', views.admin_exists, name='admin-exists'),
     re_path(r'^auth/signup/?$', views.signup, name='signup'),

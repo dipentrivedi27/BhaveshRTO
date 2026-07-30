@@ -5,6 +5,12 @@ import sys
 
 def main():
     """Run administrative tasks."""
+    # Ensure stdout/stderr can safely print emoji/unicode log messages even
+    # when Windows redirects output to a non-UTF-8 console or file handle.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, 'reconfigure'):
+            stream.reconfigure(encoding='utf-8', errors='replace')
+
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'rto_crm.settings')
     try:
         from django.core.management import execute_from_command_line

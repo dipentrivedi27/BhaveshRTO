@@ -26,14 +26,13 @@ A full-stack, single-admin CRM system designed for managing RTO (Regional Transp
 ## 🛠️ Tech Stack
 
 ### Backend
-- **Node.js** + **Express**
-- **MySQL** with **Sequelize ORM**
-- **JWT** authentication & **Bcrypt** password hashing
-- **Nodemailer** for OTP emails (supports Ethereal for dev, SMTP, SendGrid)
-- **WhatsApp API Module** (Stubbed by default; Meta & Twilio ready)
-- **Puppeteer** for PDF receipt generation
-- **node-cron** for background daily expiry checks
-- **Jest** & **Supertest** for unit testing
+- **Django 5** + **Django REST Framework**
+- **MySQL** via Django's ORM (`mysqlclient`)
+- **JWT** authentication (`PyJWT`) & **Bcrypt** password hashing
+- OTP codes are logged to the console in dev (wire up Django's email backend for production)
+- **WhatsApp reminders** — stubbed provider, logged to `MessageLog`
+- **ReportLab** for PDF receipt generation
+- **django-cors-headers** for React frontend CORS support
 
 ### Frontend
 - **React** (Vite) + **Tailwind CSS v4**
@@ -47,7 +46,7 @@ A full-stack, single-admin CRM system designed for managing RTO (Regional Transp
 ## 🚀 Getting Started
 
 ### Prerequisites
-- **Node.js** (v18 or higher)
+- **Python** (v3.11 or higher)
 - **MySQL** database server running locally or remotely
 
 ---
@@ -55,7 +54,7 @@ A full-stack, single-admin CRM system designed for managing RTO (Regional Transp
 ### Step 1: Database Setup
 Create a MySQL database for the application:
 ```sql
-CREATE DATABASE bhavesh_rto_crm;
+CREATE DATABASE bhavesh_rto;
 ```
 
 ---
@@ -67,48 +66,52 @@ CREATE DATABASE bhavesh_rto_crm;
    cd backend
    ```
 
-2. Install dependencies:
+2. Create and activate a virtual environment:
    ```bash
-   npm install
+   python -m venv venv
+   venv\Scripts\activate      # Windows
+   source venv/bin/activate   # macOS/Linux
    ```
 
-3. Create your `.env` file based on `.env.example`:
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. Create your `.env` file based on `.env.example`:
    ```bash
    cp .env.example .env
    ```
 
-4. Configure `.env` variables:
+5. Configure `.env` variables:
    ```env
-   DB_HOST=localhost
-   DB_PORT=3306
-   DB_NAME=bhavesh_rto_crm
+   SECRET_KEY=your-django-secret-key
+   DEBUG=True
+   ALLOWED_HOSTS=*
+
+   DB_ENGINE=django.db.backends.mysql
+   DB_NAME=bhavesh_rto
    DB_USER=root
    DB_PASSWORD=your_mysql_password
+   DB_HOST=localhost
+   DB_PORT=3306
 
    JWT_SECRET=your_super_secret_jwt_key
    JWT_EXPIRES_IN=8h
    OTP_EXPIRES_MINUTES=10
 
-   # Email Service (ethereal for local testing, smtp, or sendgrid)
-   EMAIL_PROVIDER=ethereal
-
-   # WhatsApp Service (stub for local testing, meta, or twilio)
-   WHATSAPP_PROVIDER=stub
-
-   PORT=5000
    FRONTEND_URL=http://localhost:5173
    ```
 
-5. Run unit tests:
+6. Apply database migrations:
    ```bash
-   npm test
+   python manage.py migrate
    ```
 
-6. Start the backend server in development mode:
+7. Start the backend server (the frontend expects it on port 5000):
    ```bash
-   npm run dev
+   python manage.py runserver 0.0.0.0:5000
    ```
-   *The database tables will be automatically created/synced on launch.*
 
 ---
 
@@ -139,24 +142,8 @@ CREATE DATABASE bhavesh_rto_crm;
 2. Fill out the signup form with your Admin Name, Email, and Password.
 3. Once registered, `/signup` is **permanently disabled**. Any subsequent access attempts to signup will return HTTP 403 / redirect to `/login`.
 4. On `/login`, enter your registered email and password.
-5. An OTP code will be sent to your email (if using `EMAIL_PROVIDER=ethereal`, check the console log for the Ethereal email preview link or dev OTP log).
+5. An OTP code is generated on login — in development it is printed to the Django server console (`🔑 DEV OTP for ...`). Wire up a real email backend in `crm_app/views.py`/Django settings for production use.
 6. Enter the 6-digit OTP code to complete login and access your Dashboard.
-
----
-
-## 🧪 Running Unit Tests
-
-The backend includes test suites covering:
-- **Single-Admin Enforcement**: Ensures second signup attempt is blocked.
-- **OTP Expiry & Consumption**: Validates code expiry and single-use logic.
-- **Pending Amount Calculation**: Guarantees server-side computation of `amount_pending`.
-- **30-Day Expiry Helper**: Pure unit tests for date window math.
-
-Run tests using Jest:
-```bash
-cd backend
-npm test
-```
 
 ---
 

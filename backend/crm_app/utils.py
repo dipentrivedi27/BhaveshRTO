@@ -1,5 +1,7 @@
 import random
 import datetime
+from django.conf import settings
+from django.core.mail import send_mail
 from django.utils import timezone
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.lib import colors
@@ -9,6 +11,26 @@ from io import BytesIO
 
 def generate_otp_code():
     return str(random.randint(100000, 999999))
+
+
+def send_otp_email(admin, code, expires_minutes):
+    """Email the OTP code to the admin. Returns True on success, False on
+    failure (caller falls back to logging the code to the console).
+    """
+    subject = 'Your Bhavesh RTO CRM Login OTP'
+    message = (
+        f"Hello {admin.name},\n\n"
+        f"Your one-time login code is: {code}\n\n"
+        f"This code is valid for {expires_minutes} minutes. "
+        f"If you did not request this, you can safely ignore this email.\n\n"
+        f"— Bhavesh Solanki RTO & Insurance Advisor"
+    )
+    try:
+        send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [admin.email], fail_silently=False)
+        return True
+    except Exception as e:
+        print(f"[Login] OTP email send failed: {e}")
+        return False
 
 MESSAGE_TEMPLATES = {
     'insurance': lambda name, end_date: f"Hello {name},\n\nThis is a reminder from Bhavesh Solanki RTO & Insurance Advisor.\n\nYour *vehicle insurance* is expiring on *{end_date}*. Please renew it before the expiry date to avoid penalties.\n\nFor assistance, contact us anytime. Thank you! 🙏",
