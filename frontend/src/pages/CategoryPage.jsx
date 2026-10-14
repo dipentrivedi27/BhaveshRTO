@@ -49,6 +49,8 @@ const CATEGORY_CONFIG = {
       { key: 'contact_number', label: 'Contact' },
       { key: 'start_date', label: 'Fitness Start Date', isDate: true },
       { key: 'end_date', label: 'Fitness End Date', isDate: true },
+      { key: 'amount_total', label: 'Total', isMoney: true },
+      { key: 'amount_paid', label: 'Paid', isMoney: true },
     ],
   },
   puc: {
@@ -61,6 +63,8 @@ const CATEGORY_CONFIG = {
       { key: 'contact_number', label: 'Contact' },
       { key: 'start_date', label: 'PUC Start Date', isDate: true },
       { key: 'end_date', label: 'PUC End Date', isDate: true },
+      { key: 'amount_total', label: 'Total', isMoney: true },
+      { key: 'amount_paid', label: 'Paid', isMoney: true },
     ],
   },
   tax: {
@@ -74,6 +78,8 @@ const CATEGORY_CONFIG = {
       { key: 'vehicle_number', label: 'Vehicle No.' },
       { key: 'start_date', label: 'Tax Start Date', isDate: true },
       { key: 'end_date', label: 'Tax Expiry Date', isDate: true },
+      { key: 'amount_total', label: 'Total', isMoney: true },
+      { key: 'amount_paid', label: 'Paid', isMoney: true },
     ],
   },
   license: {
@@ -86,6 +92,8 @@ const CATEGORY_CONFIG = {
       { key: 'contact_number', label: 'Contact' },
       { key: 'start_date', label: 'Issue Date', isDate: true },
       { key: 'end_date', label: 'Expiry Date', isDate: true },
+      { key: 'amount_total', label: 'Total', isMoney: true },
+      { key: 'amount_paid', label: 'Paid', isMoney: true },
     ],
   },
 };

@@ -97,7 +97,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
         today = timezone.localdate()
         future = today + datetime.timedelta(days=days)
 
-        qs = Customer.objects.filter(end_date__range=[today, future])
+        qs = Customer.objects.exclude(is_broker=True).filter(end_date__range=[today, future])
         if category:
             qs = qs.filter(category=category)
 

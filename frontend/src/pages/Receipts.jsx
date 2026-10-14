@@ -12,6 +12,7 @@ const CATEGORY_LABELS = {
   tax: 'Tax',
   license: 'License',
   fitness_puc: 'Fitness / PUC',
+  broker: 'Broker',
 };
 
 const SERVICE_OPTIONS = [
@@ -49,6 +50,7 @@ const FILTERS = [
   { key: 'all', label: 'All Receipts' },
   { key: 'customer', label: 'Customer Receipts' },
   { key: 'manual', label: 'Manual Receipts' },
+  { key: 'broker', label: 'Broker Receipts' },
 ];
 
 export default function Receipts() {
@@ -410,10 +412,15 @@ export default function Receipts() {
                 ) : filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map((c, i) => (
                   <tr key={c.id}>
                     <td style={{ color: '#94a3b8', fontSize: 12 }}>{(currentPage - 1) * ITEMS_PER_PAGE + i + 1}</td>
-                    <td style={{ fontWeight: 600, color: '#0f172a' }}>{c.name}</td>
+                    <td style={{ fontWeight: 600, color: '#0f172a' }}>
+                      {c.name}
+                      {c.type === 'broker' && c.broker_name && (
+                        <div style={{ fontSize: 11, fontWeight: 500, color: '#7c3aed' }}>{c.broker_name}</div>
+                      )}
+                    </td>
                     <td style={{ color: '#475569' }}>{c.contact_number || '—'}</td>
                     <td>
-                      {c.type === 'customer' ? (
+                      {c.type !== 'manual' ? (
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                           {(c.categories && c.categories.length ? c.categories : [c.category])
                             .filter(Boolean)

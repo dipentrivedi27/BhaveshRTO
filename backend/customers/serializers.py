@@ -89,12 +89,21 @@ class PermitCustomerSerializer(InsuranceCustomerSerializer):
 
 
 class FitnessPucCustomerSerializer(serializers.ModelSerializer):
-    """Per PRD: this page must show *nothing else* beyond these four fields."""
+    """Legacy combined Fitness/PUC page; exposes the same column set as the
+    other category pages (name/contact, dates, amounts)."""
+
+    amount_pending = serializers.SerializerMethodField()
 
     class Meta:
         model = Customer
-        fields = ['id', 'name', 'contact_number', 'start_date', 'end_date', 'needs_reminder']
+        fields = [
+            'id', 'name', 'contact_number', 'start_date', 'end_date',
+            'amount_total', 'amount_paid', 'amount_pending', 'needs_reminder',
+        ]
         read_only_fields = fields
+
+    def get_amount_pending(self, obj):
+        return str(obj.amount_pending)
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -106,8 +115,8 @@ class FitnessPucCustomerSerializer(serializers.ModelSerializer):
 
 class SplitServiceSerializer(serializers.ModelSerializer):
     """Shared minimal serializer for the individually split service pages
-    (Fitness, PUC, Tax). Only name/contact and the service-specific dates are
-    exposed, matching the data-minimal category-page requirement.
+    (Fitness, PUC, Tax). Only name/contact, the service-specific dates and the
+    amounts are exposed, matching the Insurance category-page column set.
 
     `details_key` selects which service_details bucket to read dates from;
     `legacy_keys` are the pre-split bucket names to fall back to so records
@@ -116,11 +125,18 @@ class SplitServiceSerializer(serializers.ModelSerializer):
 
     details_key = None
     legacy_keys = ()
+    amount_pending = serializers.SerializerMethodField()
 
     class Meta:
         model = Customer
-        fields = ['id', 'name', 'contact_number', 'start_date', 'end_date', 'needs_reminder']
+        fields = [
+            'id', 'name', 'contact_number', 'start_date', 'end_date',
+            'amount_total', 'amount_paid', 'amount_pending', 'needs_reminder',
+        ]
         read_only_fields = fields
+
+    def get_amount_pending(self, obj):
+        return str(obj.amount_pending)
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -150,15 +166,26 @@ class TaxCustomerSerializer(SplitServiceSerializer):
     legacy_keys = ('permit',)
 
     class Meta(SplitServiceSerializer.Meta):
-        fields = ['id', 'name', 'contact_number', 'vehicle_number', 'start_date', 'end_date', 'needs_reminder']
+        fields = [
+            'id', 'name', 'contact_number', 'vehicle_number', 'start_date', 'end_date',
+            'amount_total', 'amount_paid', 'amount_pending', 'needs_reminder',
+        ]
         read_only_fields = fields
 
 
 class LicenseCustomerSerializer(serializers.ModelSerializer):
+    amount_pending = serializers.SerializerMethodField()
+
     class Meta:
         model = Customer
-        fields = ['id', 'name', 'contact_number', 'start_date', 'end_date', 'needs_reminder']
+        fields = [
+            'id', 'name', 'contact_number', 'start_date', 'end_date',
+            'amount_total', 'amount_paid', 'amount_pending', 'needs_reminder',
+        ]
         read_only_fields = fields
+
+    def get_amount_pending(self, obj):
+        return str(obj.amount_pending)
 
     def to_representation(self, instance):
         data = super().to_representation(instance)

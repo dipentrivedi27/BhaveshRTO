@@ -31,8 +31,9 @@ def _month_range(year, month):
 
 
 def _entered_customers(year, month):
-    """Customers entered (based on start_date) in the selected period."""
-    qs = Customer.objects.all()
+    """Customers entered (based on start_date) in the selected period.
+    Brokers are excluded — the dashboard tracks customers only."""
+    qs = Customer.objects.exclude(is_broker=True)
     if year:
         qs = qs.filter(start_date__year=year)
     if month:
@@ -53,7 +54,7 @@ def _entered_receipts(year, month):
 def _available_years():
     """Years that have entered customers (based on start_date) + manual receipts (based on date)."""
     years = set()
-    for sd in Customer.objects.exclude(start_date__isnull=True).values_list('start_date', flat=True):
+    for sd in Customer.objects.exclude(is_broker=True).exclude(start_date__isnull=True).values_list('start_date', flat=True):
         years.add(sd.year)
     for d in ManualReceipt.objects.exclude(date__isnull=True).values_list('date', flat=True):
         years.add(d.year)
@@ -71,7 +72,7 @@ def _category_summary(value, base=None):
     they belong to. This mirrors what each category page shows.
     """
     if base is None:
-        base = Customer.objects.all()
+        base = Customer.objects.exclude(is_broker=True)
     qs = base.filter(Q(category=value) | Q(categories__icontains=f'"{value}"')).distinct()
     totals = qs.aggregate(total=Sum('amount_total'), paid=Sum('amount_paid'))
     total = float(totals['total'] or 0)
@@ -108,53 +109,42 @@ class DashboardSummaryView(APIView):
     permission_classes = [IsTheOneAdmin]
 
     def get(self, request):
-        # Optional year/month filter. Everything is scoped to the customer's
-        # entered (created) date: customer counts, category cards, collection
-        # (payments from the entered customers made in the period) and pending.
-        year = request.query_params.get('year')
-        month = request.query_params.get('month')
+        # The category cards and the collection KPIs are always all-time so they
+        # mirror the standalone Category pages (which have no date filter). The
+        # year/month filter scopes the two trend charts only. Brokers are
+        # excluded everywhere.
+        all_customers = Customer.objects.exclude(is_broker=True)
+        all_receipts = ManualReceipt.objects.all()
 
-        customers = _entered_customers(year, month)
-        receipts = _entered_receipts(year, month)
-        customer_ids = list(customers.values_list('id', flat=True))
+        # Per-category cards: same counting/matching rule as customers/filters.py
+        # (primary `category` OR the `categories` JSON list), so every card's
+        # count and amounts line up exactly with its Category page.
+        category_totals = {cat: _category_summary(cat, all_customers) for cat in DASHBOARD_CATEGORIES}
+        category_totals['manual'] = _manual_receipt_summary(all_receipts)
 
-        # Total customers = DB customers + manual receipts (one-off customers
-        # recorded through the Generate Manual Receipt flow).
-        total_customers = len(customer_ids) + receipts.count()
+        category_counts = {cat: info['count'] for cat, info in category_totals.items()}
 
-        period_payments = Payment.objects.filter(customer_id__in=customer_ids)
-        # total_collection is the sum of payments for customers entered in this period
-        db_total_collection = period_payments.aggregate(total=Sum('amount'))['total'] or 0
-        manual_total_collection = receipts.aggregate(total=Sum('amount_paid'))['total'] or 0
-        total_collection = db_total_collection + manual_total_collection
+        # Total Customers = unique non-broker customers + manual receipts. It must
+        # NOT be the sum of the category cards, which double-counts any customer
+        # that belongs to multiple categories.
+        total_customers = all_customers.count() + all_receipts.count()
 
-        # Pending: the outstanding balance of the entered customers.
-        totals = customers.aggregate(total_amt=Sum('amount_total'), paid_amt=Sum('amount_paid'))
-        db_total_amt = float(totals['total_amt'] or 0)
-        db_paid_amt = float(totals['paid_amt'] or 0)
-        
-        manual_totals = receipts.aggregate(total_amt=Sum('amount_total'), paid_amt=Sum('amount_paid'))
-        manual_total_amt = float(manual_totals['total_amt'] or 0)
-        manual_paid_amt = float(manual_totals['paid_amt'] or 0)
-
-        total_amt = db_total_amt + manual_total_amt
-        paid_amt = db_paid_amt + manual_paid_amt
+        # Collection KPIs are the sum of the (all-time) category cards, so they
+        # always equal the amounts shown on the Category pages.
+        total_collection = sum(float(info['paid']) for info in category_totals.values())
+        pending_collection = sum(float(info['pending']) for info in category_totals.values())
 
         years = _available_years()
-
-        category_totals = {cat: _category_summary(cat, customers) for cat in DASHBOARD_CATEGORIES}
-        category_totals['manual'] = _manual_receipt_summary(receipts)
-        category_counts = {cat: info['count'] for cat, info in category_totals.items()}
 
         return Response({
             'success': True,
             'data': {
                 'total_customers': total_customers,
                 'totalCustomers': total_customers,
-                'total_collection': f'{float(total_collection):.2f}',
-                'totalCollection': f'{float(total_collection):.2f}',
-                'pending_collection': f'{(total_amt - paid_amt):.2f}',
-                'pendingCollection': f'{(total_amt - paid_amt):.2f}',
+                'total_collection': f'{total_collection:.2f}',
+                'totalCollection': f'{total_collection:.2f}',
+                'pending_collection': f'{pending_collection:.2f}',
+                'pendingCollection': f'{pending_collection:.2f}',
                 'years': years,
                 'category_counts': category_counts,
                 'categoryCounts': category_counts,

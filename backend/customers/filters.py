@@ -54,5 +54,7 @@ class CustomerFilter(django_filters.FilterSet):
         # JSON "contains" is not supported by every database Django supports.
         # Matching the serialized list works consistently because category values
         # are fixed choices and cannot be substrings of one another.
+        # Brokers are excluded so their service chips never show up in customer
+        # (non-broker) category views or counts.
         from django.db.models import Q
-        return queryset.filter(Q(category=value) | Q(categories__icontains=f'"{value}"')).distinct()
+        return queryset.filter(Q(category=value) | Q(categories__icontains=f'"{value}"')).exclude(is_broker=True).distinct()

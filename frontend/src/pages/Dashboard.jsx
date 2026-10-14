@@ -170,7 +170,9 @@ export default function Dashboard() {
       <div className="card" style={{ marginBottom: 20 }}>
         <div className="card-header" style={{ paddingBottom: 12, flexWrap: 'wrap', gap: 12 }}>
           <h2 className="card-title" style={{ margin: 0 }}>Customers by Category</h2>
-          {/* Year / Month filter — scopes collection figures & the chart only */}
+          {/* Year / Month filter — scopes the two trend charts only. The
+              category cards & collection KPIs always show all-time totals so
+              they match the standalone Category pages. */}
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginLeft: 'auto' }}>
             <span style={{ fontSize: 12, color: '#64748b', fontWeight: 600, whiteSpace: 'nowrap' }}>Filter:</span>
             <select

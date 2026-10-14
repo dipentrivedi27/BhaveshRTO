@@ -54,18 +54,25 @@ class OverallReceiptsView(APIView):
         rows = []
         grand_total = grand_paid = grand_pending = 0
 
-        # ── Customer receipts ─────────────────────────────────────────────
+        # ── Customer + broker receipts ────────────────────────────────────
         for c in Customer.objects.all():
             total = float(c.amount_total or 0)
             paid = float(c.amount_paid or 0)
             pending = total - paid
-            grand_total += total
-            grand_paid += paid
-            grand_pending += pending
+            is_broker = bool(c.is_broker)
+            # Brokers have their own page/ledger; their amounts are NOT counted
+            # in the overall receipt totals (nor on the dashboard). They still
+            # appear as rows so they can be filtered/viewed here.
+            if not is_broker:
+                grand_total += total
+                grand_paid += paid
+                grand_pending += pending
             rows.append({
                 'id': str(c.id),
-                'type': 'customer',
+                'type': 'broker' if is_broker else 'customer',
+                'is_broker': is_broker,
                 'name': c.name,
+                'broker_name': c.broker_name,
                 'contact_number': c.contact_number,
                 'category': c.category,    # used by frontend for badge
                 'categories': c.categories or [c.category],
@@ -87,6 +94,7 @@ class OverallReceiptsView(APIView):
             rows.append({
                 'id': str(m.id),
                 'type': 'manual',
+                'is_broker': False,
                 'name': m.name,
                 'contact_number': m.contact_number,
                 'category': None,          # n/a for manual receipts

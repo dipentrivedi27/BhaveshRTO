@@ -269,10 +269,23 @@ const SectionCard = ({ title, description, fields, register }) => (
   </FormCard>
 );
 
-export const InsuranceDetailsCard = ({ register }) => <SectionCard register={register} title="Insurance Details" description="Policy and insurance validity" fields={[
-  { name: 'company_name', label: 'Company Name', placeholder: 'Insurance company name' }, { name: 'policy_type', label: 'Policy Type', options: [{ value: 'full', label: 'Full' }, { value: 'third_party', label: 'Third Party' }] }, { name: 'policy_number', label: 'Policy Number', placeholder: 'Policy number' },
-  { name: 'insurance_start', label: 'Start Date', type: 'date' }, { name: 'insurance_end', label: 'Expiry Date', type: 'date' },
-]} />;
+export function InsuranceDetailsCard({ register, watch, setValue }) {
+  const insuranceStart = watch('insurance_start');
+  const insuranceEnd = watch('insurance_end');
+  const lastAutoEnd = useRef('');
+  useEffect(() => {
+    if (!insuranceStart) return;
+    const autoEnd = minusOneDay(addMonths(insuranceStart, 12));
+    if (insuranceEnd === '' || insuranceEnd === lastAutoEnd.current) {
+      lastAutoEnd.current = autoEnd;
+      setValue('insurance_end', autoEnd);
+    }
+  }, [insuranceStart, insuranceEnd, setValue]);
+  return <SectionCard register={register} title="Insurance Details" description="Policy and insurance validity" fields={[
+    { name: 'company_name', label: 'Company Name', placeholder: 'Insurance company name' }, { name: 'policy_type', label: 'Policy Type', options: [{ value: 'full', label: 'Full' }, { value: 'third_party', label: 'Third Party' }] }, { name: 'policy_number', label: 'Policy Number', placeholder: 'Policy number' },
+    { name: 'insurance_start', label: 'Start Date', type: 'date' }, { name: 'insurance_end', label: 'Expiry Date', type: 'date' },
+  ]} />;
+}
 export const FitnessDetailsCard = ({ register }) => <SectionCard register={register} title="Fitness Details" description="Vehicle fitness certificate information" fields={[
   { name: 'fitness_start', label: 'Start Date', type: 'date' }, { name: 'fitness_end', label: 'Valid Until', type: 'date' },
 ]} />;
@@ -621,7 +634,7 @@ export default function AddCustomer() {
             <>
               <CustomerDetailsCard register={register} errors={errors} />
               <div className="details-panel" key={selectedServices.join('-')}>
-                {selectedServices.includes('insurance') && <InsuranceDetailsCard register={register} />}
+                {selectedServices.includes('insurance') && <InsuranceDetailsCard register={register} watch={watch} setValue={setValue} />}
                 {selectedServices.includes('fitness') && <FitnessDetailsCard register={register} />}
                 {selectedServices.includes('puc') && <PUCDetailsCard register={register} />}
                 {selectedServices.includes('tax') && <TaxDetailsCard register={register} />}

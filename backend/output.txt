@@ -1,0 +1,42 @@
+--- CUSTOMER TOTALS ---
+Total Customer rows: 20
+is_broker=False rows: 16
+is_broker=True rows: 4
+is_broker=False, start_date is NULL: 1
+  NULL start_date: id=f51578ea-5121-4cb0-94d9-03659f82c475, name=BHAVESH, cat=insurance, categories=['insurance'], created_at=2026-09-27 08:43:08.170245+00:00
+
+--- YEARS IN DB ---
+Available years: [2026, 2025, 2021, 9]
+Customer start_date years: {9, 2026, 2025, 2021}
+Customer created_at years: {None}
+
+--- CATEGORY BREAKDOWN ---
+Category 'insurance' (Insurance): primary=5, total_including_json=5, in_dashboard_cards=True
+Category 'permit' (Permit): primary=0, total_including_json=2, in_dashboard_cards=True
+Category 'fitness' (Fitness): primary=2, total_including_json=3, in_dashboard_cards=True
+Category 'puc' (PUC): primary=2, total_including_json=3, in_dashboard_cards=True
+Category 'tax' (Tax): primary=3, total_including_json=4, in_dashboard_cards=True
+Category 'fitness_puc' (Fitness / PUC): primary=0, total_including_json=0, in_dashboard_cards=False
+Category 'license' (License): primary=4, total_including_json=4, in_dashboard_cards=True
+Category 'broker' (Broker): primary=0, total_including_json=0, in_dashboard_cards=False
+Category 'transfer' (Transfer): primary=0, total_including_json=0, in_dashboard_cards=False
+Category 'hpt' (HPT): primary=0, total_including_json=0, in_dashboard_cards=False
+Category 'hpa' (HPA): primary=0, total_including_json=0, in_dashboard_cards=False
+Category 'odit' (Audit): primary=0, total_including_json=0, in_dashboard_cards=False
+Category 'other' (Other): primary=0, total_including_json=0, in_dashboard_cards=False
+
+--- DASHBOARD SUMMARY WITH NO FILTER ---
+Using user: Dipen <trivedidipenm@gmail.com>
+Dashboard summary response status: 200
+Dashboard summary response data (no filter): {'total_customers': 26, 'totalCustomers': 26, 'total_collection': '87700.00', 'totalCollection': '87700.00', 'pending_collection': '33500.00', 'pendingCollection': '33500.00', 'years': [2026, 2025, 2021, 9], 'category_counts': {'insurance': 5, 'permit': 2, 'fitness': 3, 'puc': 3, 'tax': 4, 'license': 4, 'manual': 5}, 'categoryCounts': {'insurance': 5, 'permit': 2, 'fitness': 3, 'puc': 3, 'tax': 4, 'license': 4, 'manual': 5}, 'category_totals': {'insurance': {'count': 5, 'total': '13200.00', 'paid': '8700.00', 'pending': '4500.00'}, 'permit': {'count': 2, 'total': '27000.00', 'paid': '20000.00', 'pending': '7000.00'}, 'fitness': {'count': 3, 'total': '35000.00', 'paid': '22000.00', 'pending': '13000.00'}, 'puc': {'count': 3, 'total': '32800.00', 'paid': '22000.00', 'pending': '10800.00'}, 'tax': {'count': 4, 'total': '39000.00', 'paid': '32000.00', 'pending': '7000.00'}, 'license': {'count': 4, 'total': '16300.00', 'paid': '12500.00', 'pending': '3800.00'}, 'manual': {'count': 5, 'total': '17700.00', 'paid': '12500.00', 'pending': '5200.00'}}, 'categoryTotals': {'insurance': {'count': 5, 'total': '13200.00', 'paid': '8700.00', 'pending': '4500.00'}, 'permit': {'count': 2, 'total': '27000.00', 'paid': '20000.00', 'pending': '7000.00'}, 'fitness': {'count': 3, 'total': '35000.00', 'paid': '22000.00', 'pending': '13000.00'}, 'puc': {'count': 3, 'total': '32800.00', 'paid': '22000.00', 'pending': '10800.00'}, 'tax': {'count': 4, 'total': '39000.00', 'paid': '32000.00', 'pending': '7000.00'}, 'license': {'count': 4, 'total': '16300.00', 'paid': '12500.00', 'pending': '3800.00'}, 'manual': {'count': 5, 'total': '17700.00', 'paid': '12500.00', 'pending': '5200.00'}}}
+
+--- DASHBOARD SUMMARY WITH DEFAULT FILTER (year=2026) ---
+Dashboard summary response data (year=2026): {'total_customers': 21, 'totalCustomers': 21, 'total_collection': '79500.00', 'totalCollection': '79500.00', 'pending_collection': '31200.00', 'pendingCollection': '31200.00', 'years': [2026, 2025, 2021, 9], 'category_counts': {'insurance': 3, 'permit': 2, 'fitness': 3, 'puc': 2, 'tax': 3, 'license': 3, 'manual': 5}, 'categoryCounts': {'insurance': 3, 'permit': 2, 'fitness': 3, 'puc': 2, 'tax': 3, 'license': 3, 'manual': 5}, 'category_totals': {'insurance': {'count': 3, 'total': '10500.00', 'paid': '7500.00', 'pending': '3000.00'}, 'permit': {'count': 2, 'total': '27000.00', 'paid': '20000.00', 'pending': '7000.00'}, 'fitness': {'count': 3, 'total': '35000.00', 'paid': '22000.00', 'pending': '13000.00'}, 'puc': {'count': 2, 'total': '30000.00', 'paid': '20000.00', 'pending': '10000.00'}, 'tax': {'count': 3, 'total': '34000.00', 'paid': '27000.00', 'pending': '7000.00'}, 'license': {'count': 3, 'total': '13500.00', 'paid': '10500.00', 'pending': '3000.00'}, 'manual': {'count': 5, 'total': '17700.00', 'paid': '12500.00', 'pending': '5200.00'}}, 'categoryTotals': {'insurance': {'count': 3, 'total': '10500.00', 'paid': '7500.00', 'pending': '3000.00'}, 'permit': {'count': 2, 'total': '27000.00', 'paid': '20000.00', 'pending': '7000.00'}, 'fitness': {'count': 3, 'total': '35000.00', 'paid': '22000.00', 'pending': '13000.00'}, 'puc': {'count': 2, 'total': '30000.00', 'paid': '20000.00', 'pending': '10000.00'}, 'tax': {'count': 3, 'total': '34000.00', 'paid': '27000.00', 'pending': '7000.00'}, 'license': {'count': 3, 'total': '13500.00', 'paid': '10500.00', 'pending': '3000.00'}, 'manual': {'count': 5, 'total': '17700.00', 'paid': '12500.00', 'pending': '5200.00'}}}
+
+--- MANUAL RECEIPTS ---
+Total manual receipts: 5
+  Receipt: id=2f8e0bcd-a1ed-4388-ac84-7b44d90e0a8a, cust_name=MIKHIL, date=2026-09-27, total=800.00, paid=800.00
+  Receipt: id=ca1e973e-d337-4087-8edb-1231287be530, cust_name=Jigo Surti, date=2026-08-13, total=10000.00, paid=5000.00
+  Receipt: id=2466e495-7ad5-44a5-ad46-11a4b444f75d, cust_name=Hiren bhai, date=2026-08-13, total=5000.00, paid=5000.00
+  Receipt: id=9546bece-6c1c-48fd-aa31-4c38cb158054, cust_name=Dipen Trivedi, date=2026-08-09, total=1200.00, paid=1000.00
+  Receipt: id=4f565d87-8566-43a8-8792-5829e87a83b6, cust_name=Jay sharma, date=2026-08-09, total=700.00, paid=700.00
